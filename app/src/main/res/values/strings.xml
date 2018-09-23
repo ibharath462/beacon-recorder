@@ -1,0 +1,24 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <string name="app_name">iBeaconScanner demo</string>
+
+    <!-- Main Activity -->
+    <string name="uuid">Uuid</string>
+    <string name="major">Major</string>
+    <string name="minor">Minor</string>
+    <string name="start">Start scanning</string>
+    <string name="stop">Stop</string>
+    <string name="log_title">Log</string>
+    <string name="log_content">Logs will appear in the notification shade for demonstration purposes.</string>
+    <string name="uuid_error">Uuid is not correct.</string>
+    <string name="major_error">Major is not correct. Has to be a number between 1 &#8211; 65535.</string>
+    <string name="minor_error">Major is not correct. Has to be a number between 1 &#8211; 65535.</string>
+
+    <string name="notification_enter">Entered beacon with UUID %1$s and major %2$d and minor %3$d.</string>
+    <string name="notification_exit">Exited beacon with UUID %1$s and major %2$d and minor %3$d.</string>
+
+    <!-- Default values for beacon input -->
+    <string name="beacon_uuid" tools:ignore="TypographyDashes">11111111-1111-1111-1111-111111111111</string>
+    <string name="beacon_major">1</string>
+    <string name="beacon_minor">1</string>
+    <string name="title_activity_camera">cameraActivity</string>
+</resources>

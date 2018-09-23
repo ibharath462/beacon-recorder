@@ -1,0 +1,152 @@
+apply plugin: 'com.android.library'
+apply plugin: 'com.jfrog.bintray'
+apply plugin: 'com.github.dcendents.android-maven'
+apply from: '../jacoco.gradle'
+
+// for Bintray
+def projectVersionCodeNr = Integer.parseInt(projectVersionCode);
+def libGit = libGit;
+def libUrl = libUrl;
+def libDescription = libDescription
+def libGroupId = libGroupId;
+def libArtifactId = libArtifactId;
+
+// for Maven
+group = libGroupId
+version = projectVersionName
+
+if (System.env.TRAVIS == 'true') {
+    allprojects {
+        tasks.withType(GroovyCompile) {
+            groovyOptions.fork = false
+        }
+        tasks.withType(Test) {
+            // containers (currently) have 2 dedicated cores and 4GB of memory
+            maxParallelForks = 2
+            minHeapSize = '128m'
+        }
+    }
+}
+
+android {
+    compileSdkVersion 27
+    buildToolsVersion "27.0.3"
+
+    defaultConfig {
+        minSdkVersion 18
+        targetSdkVersion 27
+        versionCode projectVersionCodeNr
+        versionName projectVersionName
+        consumerProguardFiles 'proguard-rules.pro'
+
+        buildConfigField 'long', 'BEACON_EXIT_TIME_IN_MILLIS', '20L * 1000L'
+        buildConfigField 'long', 'ADD_BEACON_TIMEOUT_IN_MILLIS', '375L'
+    }
+
+    buildTypes {
+        debug {
+            testCoverageEnabled true
+        }
+        release {
+            minifyEnabled false
+        }
+    }
+
+    lintOptions {
+        abortOnError false
+    }
+
+    dexOptions {
+        if (System.env.TRAVIS == 'true') {
+            preDexLibraries = false
+        }
+    }
+}
+
+dependencies {
+    implementation 'com.android.support:support-annotations:27.1.1'
+    implementation 'com.android.support:support-compat:27.1.1'
+    implementation 'com.firebase:firebase-jobdispatcher:0.8.5'
+
+    testImplementation 'junit:junit:4.12'
+    testImplementation 'org.robolectric:robolectric:3.1.4'
+    testImplementation 'org.mockito:mockito-core:2.3.0'
+}
+
+configurations {
+    deployerJars
+}
+
+install {
+    repositories.mavenInstaller {
+        pom.project {
+            name libArtifactId
+            description libDescription
+            url libUrl
+            inceptionYear '2016'
+
+            packaging 'aar'
+            groupId libGroupId
+            artifactId libArtifactId
+            version projectVersionName
+
+            licenses {
+                license {
+                    name 'MIT'
+                    url libLicenseUrl
+                }
+            }
+        }
+    }
+}
+
+bintray {
+    user = hasProperty('bintray_user') ? bintray_user : System.getenv('bintray_user')
+    key = hasProperty('bintray_apikey') ? bintray_apikey : System.getenv('bintray_apikey')
+    pkg {
+        repo = libGroupId
+        name = libArtifactId
+        userOrg = hasProperty('bintray_user') ? bintray_user : System.getenv('bintray_user')
+        licenses = ['MIT']
+        vcsUrl = libGit
+        version {
+            name = projectVersionName
+            gpg {
+                sign = true
+                passphrase = hasProperty('bintray_gpg_phrase') ? bintray_gpg_phrase : System.getenv('bintray_gpg_phrase')
+            }
+        }
+    }
+    configurations = ['archives']
+}
+
+task javadoc(type: Javadoc) {
+    failOnError false
+    source = android.sourceSets.main.java.sourceFiles
+    classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
+    classpath += configurations.compile
+}
+
+task javadocJar(type: Jar, dependsOn: javadoc) {
+    classifier = 'javadoc'
+    from javadoc.destinationDir
+}
+
+task sourcesJar(type: Jar) {
+    from android.sourceSets.main.java.srcDirs
+    classifier = 'sources'
+}
+
+artifacts {
+    archives javadocJar
+    archives sourcesJar
+}
+
+sonarqube {
+    properties {
+        property "sonar.java.coveragePlugin", "jacoco"
+        property "sonar.jacoco.reportPath", "build/jacoco/testDebugUnitTest.exec" // junit coverage report
+        property "sonar.junit.reportsPath", "build/combined/" // path to UI + junit reports
+        property "sonar.android.lint.report", "build/outputs/lint-results-debug.xml" // path to lint report
+    }
+}
